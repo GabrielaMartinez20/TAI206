@@ -1,8 +1,11 @@
 #Importaciones
 from typing import Optional
-from fastapi import FastAPI, status, HTTPException
+from fastapi import FastAPI, status, HTTPException, Depends
 import asyncio #importacion de una libreria (time de espera)
 from pydantic import BaseModel, Field #libreria pydantic
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
+import secrets
+
 
 #Inicializacion 
 app= FastAPI(
@@ -21,6 +24,22 @@ class UauarioBase(BaseModel):
     id:int = Field(...,gt=0,description="Identificador de usuario",example="1")
     nombre: str = Field(...,min_length=3,max_length=50,description="Nombre del usuario")
     edad:int = Field(...,ge=0,le=121,description="Edad validada entre 0 y 121")
+    
+#*****************************
+#SEGURIDAD CON HTTP BASIC
+#****************************
+security= HTTPBasic()
+
+def verificar_Peticion(credentials: HTTPBasicCredentials= Depends(security)):
+    usuarioAuth=secrets.compare_digest(credentials.username,"admin")
+    contraAuth=secrets.compare_digest(credentials.password,"1234")
+    
+    if not(usuarioAuth and contraAuth):
+        raise HTTPException(
+            status_code= status.HTTP_401_UNAUTHORIZED,
+            detail="Crendenciales no validas"
+        )
+    return credentials.username    
 
 #Endpoint
 @app.get("/", tags=['Inicio'])
@@ -94,7 +113,7 @@ async def actualizarUsuario(id: int, usuario: dict):
     )
 
 @app.delete("/v1/usuarios/{id}", tags=['CRUD usuarios'])
-async def eliminarUsuario(id: int):
+async def eliminarUsuario(id: int, usuarioAuth: str= Depends(verificar_Peticion)):
 
     for usr in usuarios:
         if usr["id"] == id:
