@@ -1,0 +1,9 @@
+services:
+  
+  api:
+    build: .
+    container_name: server_Prueba
+    ports:
+      - "5001:5001"
+    volumes:
+      - ./app:/app/app
