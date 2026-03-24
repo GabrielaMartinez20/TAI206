@@ -1,6 +1,11 @@
 #Importaciones
 from fastapi import FastAPI
 from app.routers import usuarios, misc
+from app.data.db import engine
+from app.data import usuario
+
+#Crea la tabla sino existe
+usuario.Base.metadata.create_all(bind=engine)
 
 
 #Inicializacion 

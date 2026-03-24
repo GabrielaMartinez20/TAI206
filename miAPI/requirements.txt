@@ -1,2 +1,4 @@
 fastapi #importacion de libreria
 uvicorn[standard] #importacion especifica
+sqlalchemy
+psycopg2-binary

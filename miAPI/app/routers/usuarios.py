@@ -3,9 +3,14 @@
 #*************************************************************
 #importaciones 
 from fastapi import status, HTTPException, Depends, APIRouter
-from app.models.usuario import UauarioBase
+from app.models.usuario import UsuarioBase
 from app.data.database import usuarios
 from app.security.auth import verificar_Peticion
+
+#Importaciones para usar los endpoints
+from sqlalchemy.orm import Session
+from app.data.db import get_db
+from app.data.usuario import Usuario as usuarioDB
 
 router= APIRouter(
     prefix= "/v1/usuarios",
@@ -14,26 +19,27 @@ router= APIRouter(
 
 #Endpoints
 @router.get("/")
-async def consultaUsuarios():
+async def consultaUsuarios(db:Session = Depends(get_db)):
+    consultausuarios=db.query(usuarioDB).all()
     return{
         "status":"200",
-        "total": len(usuarios),
-        "data":usuarios
+        "total": len(consultausuarios),
+        "data":consultausuarios
     }
     
     
 @router.post("/", status_code=status.HTTP_201_CREATED)
-async def agregarUsuarios(usuario:UauarioBase): #Implementamos validadcion pydantic
-    for usr in usuarios:
-        if usr["id"] == usuario.id:
-            raise HTTPException(
-                status_code=400,
-                detail="El id ya existe"
-            )
-    usuarios.append(usuario.dict())
+async def agregarUsuarios(usuarioP:UsuarioBase, db:Session=Depends(get_db)): #Implementamos validadcion pydantic
+    
+    nuevoUsuario = usuarioDB(nombre= usuarioP.nombre, edad=usuarioP.edad)
+    
+    db.add(nuevoUsuario)
+    db.commit()
+    db.refresh(nuevoUsuario)
+    
     return{
         "mensaje" : "Usuario Agregado",
-        "datos" : usuario
+        "datos" : nuevoUsuario
     }
     
 @router.put("/{id}", status_code=status.HTTP_200_OK)
